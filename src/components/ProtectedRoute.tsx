@@ -1,29 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { checkAuthAndVerify, clearAdminSession, saveAdminSession } from '../lib/adminAuth';
+import { getAdminSession, clearAdminSession, saveAdminSession, refreshSessionIfNeeded, checkAuthAndVerify } from '../lib/adminAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+const SESSION_REFRESH_INTERVAL = 60 * 60 * 1000;
+
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const localSession = getAdminSession();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localSession);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasVerified = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async () => {
-      const result = await checkAuthAndVerify();
+    const verifyAuth = async () => {
+      if (hasVerified.current) return;
+      hasVerified.current = true;
 
-      if (mounted) {
-        setIsAuthenticated(result.isAuthenticated);
-        setIsLoading(false);
+      try {
+        const result = await checkAuthAndVerify();
+
+        if (mounted && !result.isAuthenticated) {
+          setIsAuthenticated(false);
+        } else if (mounted && result.isAuthenticated) {
+          refreshIntervalRef.current = setInterval(() => {
+            refreshSessionIfNeeded();
+          }, SESSION_REFRESH_INTERVAL);
+        }
+      } catch (error) {
+        console.error('Auth verification error:', error);
+        if (mounted) {
+          setIsAuthenticated(false);
+        }
       }
     };
 
-    initAuth();
+    if (localSession) {
+      verifyAuth();
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
@@ -31,6 +50,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       if (event === 'SIGNED_OUT') {
         clearAdminSession();
         setIsAuthenticated(false);
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+          refreshIntervalRef.current = null;
+        }
       } else if (event === 'SIGNED_IN' && session?.user) {
         const result = await checkAuthAndVerify();
         if (mounted) {
@@ -46,20 +69,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     return () => {
       mounted = false;
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
       subscription.unsubscribe();
     };
   }, []);
-
-  if (isLoading || isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
-          <p className="text-gray-600">Verifying authentication...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;

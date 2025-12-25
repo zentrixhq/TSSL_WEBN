@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { supabase, Product } from '../../lib/supabase';
 import RichTextEditor from '../RichTextEditor';
+import { handleSupabaseError } from '../../lib/adminHelpers';
 
 interface Category {
   id: string;
@@ -55,8 +56,10 @@ export default function ProductManagement() {
       if (categoriesResult.data && categoriesResult.data.length > 0 && !formData.category) {
         setFormData(prev => ({ ...prev, category: categoriesResult.data[0].slug }));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      const errorMessage = handleSupabaseError(error, 'load data');
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -97,9 +100,9 @@ export default function ProductManagement() {
 
       await fetchData();
       resetForm();
-    } catch (error) {
-      console.error('Error saving product:', error);
-      alert('Error saving product. Please try again.');
+    } catch (error: any) {
+      const errorMessage = handleSupabaseError(error, editingProduct ? 'update product' : 'add product');
+      alert(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -115,9 +118,11 @@ export default function ProductManagement() {
         .eq('id', id);
 
       if (error) throw error;
+      alert('Product deleted successfully!');
       await fetchData();
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch (error: any) {
+      const errorMessage = handleSupabaseError(error, 'delete product');
+      alert(errorMessage);
     }
   };
 

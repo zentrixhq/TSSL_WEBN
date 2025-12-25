@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, ShoppingCart, Users, ArrowLeft, Tag, LogOut, Boxes, Folder, FileText, LayoutGrid, BarChart3, TrendingUp, Trash2, Ticket, Image as ImageIcon, Bell } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -16,13 +16,33 @@ import CouponManagement from '../components/admin/CouponManagement';
 import BannerManagement from '../components/admin/BannerManagement';
 import NoticeBarManagement from '../components/admin/NoticeBarManagement';
 import { supabase } from '../lib/supabase';
-import { clearAdminSession, getAdminSession } from '../lib/adminAuth';
+import { clearAdminSession, getAdminSession, updateSessionActivity } from '../lib/adminAuth';
 
 type TabType = 'products' | 'offers' | 'bundles' | 'categories' | 'homepage' | 'banner' | 'notice' | 'orders' | 'customers' | 'footer' | 'traffic' | 'orderStats' | 'coupons';
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const trackActivity = () => {
+      updateSessionActivity();
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      window.addEventListener(event, trackActivity);
+    });
+
+    const activityInterval = setInterval(trackActivity, 5 * 60 * 1000);
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, trackActivity);
+      });
+      clearInterval(activityInterval);
+    };
+  }, []);
 
   const handleLogout = async () => {
     clearAdminSession();
@@ -34,13 +54,21 @@ export default function AdminPanel() {
     if (confirm('Are you sure you want to clear the cache? This will refresh the page.')) {
       const adminSession = getAdminSession();
 
+      const keysToKeep = ['admin_session_verified', 'adminAuth'];
+      const adminData: { [key: string]: string | null } = {};
+
+      keysToKeep.forEach(key => {
+        adminData[key] = localStorage.getItem(key);
+      });
+
       localStorage.clear();
       sessionStorage.clear();
 
-      if (adminSession) {
-        sessionStorage.setItem('admin_session_verified', JSON.stringify(adminSession));
-        localStorage.setItem('adminAuth', 'true');
-      }
+      Object.keys(adminData).forEach(key => {
+        if (adminData[key]) {
+          localStorage.setItem(key, adminData[key] as string);
+        }
+      });
 
       window.location.reload();
     }

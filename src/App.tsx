@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import HomePage from './pages/HomePage';
 import AdminPanel from './pages/AdminPanel';
 import AdminLogin from './pages/AdminLogin';
@@ -51,6 +51,32 @@ function VisitorTracker() {
 }
 
 function App() {
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        await supabase.auth.getSession();
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      } finally {
+        setSessionReady(true);
+      }
+    };
+
+    initializeSession();
+  }, []);
+
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <VisitorTracker />
