@@ -35,10 +35,10 @@ interface ProductOffer {
 }
 
 export default function CouponManagement() {
+  const [loading, setLoading] = useState(true);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<ProductOffer[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +62,7 @@ export default function CouponManagement() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [couponsResult, categoriesResult, productsResult] = await Promise.all([
         supabase
@@ -237,7 +238,7 @@ export default function CouponManagement() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading coupons...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

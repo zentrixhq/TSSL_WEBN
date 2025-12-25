@@ -37,8 +37,8 @@ interface OrderItem {
 }
 
 export default function OrderManagement() {
-  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -272,7 +272,7 @@ export default function OrderManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900 text-center py-8">Loading orders...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

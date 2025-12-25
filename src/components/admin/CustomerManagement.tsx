@@ -3,8 +3,8 @@ import { Eye, X } from 'lucide-react';
 import { supabase, Customer, Order } from '../../lib/supabase';
 
 export default function CustomerManagement() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
 
@@ -13,6 +13,7 @@ export default function CustomerManagement() {
   }, []);
 
   const fetchCustomers = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('customers')
@@ -56,7 +57,7 @@ export default function CustomerManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900 text-center py-8">Loading customers...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

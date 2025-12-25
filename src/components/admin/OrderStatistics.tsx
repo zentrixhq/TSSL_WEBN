@@ -20,6 +20,7 @@ interface OrderStats {
 }
 
 export default function OrderStatistics() {
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<OrderStats>({
     totalOrders: 0,
     totalRevenue: 0,
@@ -36,13 +37,13 @@ export default function OrderStatistics() {
     topCustomers: [],
     salesByDay: [],
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
       const { data: orders } = await supabase
         .from('orders')
@@ -191,56 +192,52 @@ export default function OrderStatistics() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Revenue</p>
-              <p className="text-2xl font-bold mt-2">{formatCurrency(stats.totalRevenue)}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">Total Revenue</p>
+                  <p className="text-2xl font-bold mt-2">{formatCurrency(stats.totalRevenue)}</p>
+                </div>
+                <DollarSign className="w-10 h-10 text-blue-100 opacity-80" />
+              </div>
             </div>
-            <DollarSign className="w-10 h-10 text-blue-100 opacity-80" />
-          </div>
-        </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Total Orders</p>
-              <p className="text-3xl font-bold mt-2">{stats.totalOrders}</p>
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Total Orders</p>
+                  <p className="text-3xl font-bold mt-2">{stats.totalOrders}</p>
+                </div>
+                <ShoppingCart className="w-10 h-10 text-green-100 opacity-80" />
+              </div>
             </div>
-            <ShoppingCart className="w-10 h-10 text-green-100 opacity-80" />
-          </div>
-        </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm font-medium">Avg Order Value</p>
-              <p className="text-2xl font-bold mt-2">{formatCurrency(stats.averageOrderValue)}</p>
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">Avg Order Value</p>
+                  <p className="text-2xl font-bold mt-2">{formatCurrency(stats.averageOrderValue)}</p>
+                </div>
+                <TrendingUp className="w-10 h-10 text-purple-100 opacity-80" />
+              </div>
             </div>
-            <TrendingUp className="w-10 h-10 text-purple-100 opacity-80" />
-          </div>
-        </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm font-medium">Orders Today</p>
-              <p className="text-3xl font-bold mt-2">{stats.ordersToday}</p>
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm font-medium">Orders Today</p>
+                  <p className="text-3xl font-bold mt-2">{stats.ordersToday}</p>
+                </div>
+                <Calendar className="w-10 h-10 text-orange-100 opacity-80" />
+              </div>
             </div>
-            <Calendar className="w-10 h-10 text-orange-100 opacity-80" />
           </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg shadow-md p-6">

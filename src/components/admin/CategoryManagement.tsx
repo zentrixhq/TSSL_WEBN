@@ -12,8 +12,8 @@ interface Category {
 }
 
 export default function CategoryManagement() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,6 +28,7 @@ export default function CategoryManagement() {
   }, []);
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -119,7 +120,7 @@ export default function CategoryManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900">Loading categories...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

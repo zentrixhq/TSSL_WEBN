@@ -51,36 +51,21 @@ export default function HomePage() {
 
   const fetchData = async () => {
     try {
-      const [settingsResult, sectionsResult, offersResult] = await Promise.all([
-        supabase
-          .from('homepage_settings')
-          .select('*')
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('homepage_sections')
-          .select(`
-            *,
-            categories (
-              slug
-            )
-          `)
-          .eq('is_active', true)
-          .order('display_order'),
-        supabase
-          .from('product_offers')
-          .select('product_id')
-          .eq('is_available', true)
-      ]);
+      setLoading(true);
 
-      if (!settingsResult.error && settingsResult.data) {
+      const settingsResult = await supabase
+        .from('homepage_settings')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
+      if (settingsResult.data) {
         if (settingsResult.data.banner_image_url) {
           setBannerUrl(settingsResult.data.banner_image_url);
         }
         if (settingsResult.data.mobile_banner_image_url) {
           setMobileBannerUrl(settingsResult.data.mobile_banner_image_url);
         }
-
         setNoticeBar({
           enabled: settingsResult.data.notice_bar_enabled || false,
           text: settingsResult.data.notice_bar_text || '',
@@ -91,52 +76,48 @@ export default function HomePage() {
         });
       }
 
-      if (sectionsResult.error) throw sectionsResult.error;
+      const offersResult = await supabase
+        .from('product_offers')
+        .select('product_id')
+        .eq('is_available', true);
 
-      const offerCounts = (offersResult.data || []).reduce((acc, offer) => {
-        acc[offer.product_id] = (acc[offer.product_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const offerCounts: Record<string, number> = {};
+      if (offersResult.data) {
+        offersResult.data.forEach(offer => {
+          offerCounts[offer.product_id] = (offerCounts[offer.product_id] || 0) + 1;
+        });
+      }
 
-      const productQueries = (sectionsResult.data || []).map(section => {
-        if (section.show_trending) {
-          return supabase
-            .from('products')
-            .select('*')
-            .eq('is_active', true)
-            .eq('is_trending', true)
-            .limit(section.max_products)
-            .order('name')
-            .then(result => ({ section, data: result.data, error: result.error }));
-        } else {
-          const categorySlug = section.categories?.slug;
-          if (!categorySlug) return Promise.resolve({ section, data: null, error: null });
+      const productsResult = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .eq('is_trending', true)
+        .order('name');
 
-          return supabase
-            .from('products')
-            .select('*')
-            .eq('is_active', true)
-            .eq('category', categorySlug)
-            .limit(section.max_products)
-            .order('name')
-            .then(result => ({ section, data: result.data, error: result.error }));
-        }
-      });
+      if (productsResult.error) {
+        console.error('Database error:', productsResult.error);
+        return;
+      }
 
-      const productResults = await Promise.all(productQueries);
+      const products = (productsResult.data || []).map(product => ({
+        ...product,
+        offers: offerCounts[product.id] || 0
+      }));
 
-      const sections: CategorySection[] = productResults
-        .filter(result => !result.error && result.data)
-        .map(result => ({
-          section: result.section,
-          products: (result.data || []).map(product => ({
-            ...product,
-            offers: offerCounts[product.id] || 0
-          }))
-        }));
-
-      setCategorySections(sections);
-    } catch (error) {
+      setCategorySections([{
+        section: {
+          id: 'all',
+          category_id: null,
+          title: 'All Products',
+          display_order: 1,
+          max_products: 20,
+          show_trending: true,
+          show_title: false
+        },
+        products
+      }]);
+    } catch (error: any) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
@@ -223,38 +204,53 @@ export default function HomePage() {
 
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-2 sm:py-4 lg:py-6">
         {loading ? (
-          <div className="text-gray-900 text-center py-8 sm:py-12">Loading products...</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-white rounded-md sm:rounded-lg lg:rounded-xl border border-gray-200 max-w-[180px] sm:max-w-[200px] lg:max-w-[220px] mx-auto">
+                  <div className="aspect-square bg-gray-200"></div>
+                  <div className="p-1.5 sm:p-2 lg:p-2.5">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             {categorySections.map((categorySection, index) => (
-              <section key={categorySection.section.id} className={index < categorySections.length - 1 ? 'mb-8 sm:mb-12 lg:mb-16' : ''}>
-                {categorySection.section.show_title && categorySection.section.title && (
-                  <div className="mb-6 sm:mb-8 lg:mb-10">
-                    <div className="bg-white border border-gray-200 rounded-lg px-6 py-4 shadow-sm">
-                      <h2 className="text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold text-center">{categorySection.section.title}</h2>
-                    </div>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
-                  {categorySection.products.map((product) => (
-                    <BrandCard
-                      key={product.id}
-                      id={product.id}
-                      slug={product.slug}
-                      name={product.name}
-                      offers={product.offers}
-                      image={product.image_url}
-                    />
-                  ))}
+          <section key={categorySection.section.id} className={index < categorySections.length - 1 ? 'mb-8 sm:mb-12 lg:mb-16' : ''}>
+            {categorySection.section.show_title && categorySection.section.title && (
+              <div className="mb-6 sm:mb-8 lg:mb-10">
+                <div className="bg-white border border-gray-200 rounded-lg px-6 py-4 shadow-sm">
+                  <h2 className="text-gray-900 text-lg sm:text-xl lg:text-2xl font-bold text-center">{categorySection.section.title}</h2>
                 </div>
-                {categorySection.products.length === 0 && (
-                  <p className="text-gray-600 text-center py-8">No products available in this section</p>
-                )}
-              </section>
+              </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+              {categorySection.products.map((product) => (
+                <BrandCard
+                  key={product.id}
+                  id={product.id}
+                  slug={product.slug}
+                  name={product.name}
+                  offers={product.offers}
+                  image={product.image_url}
+                />
+              ))}
+            </div>
+            {categorySection.products.length === 0 && (
+              <p className="text-gray-600 text-center py-8">No products available in this section</p>
+            )}
+          </section>
             ))}
 
             {categorySections.length === 0 && (
-              <p className="text-gray-600 text-center py-8">No products available</p>
+              <div className="text-center py-8">
+                <p className="text-gray-600">No products available</p>
+              </div>
             )}
           </>
         )}

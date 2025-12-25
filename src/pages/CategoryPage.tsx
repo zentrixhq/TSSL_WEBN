@@ -54,7 +54,6 @@ export default function CategoryPage() {
       if (!categoryData) {
         setCategoryName('Category Not Found');
         setProducts([]);
-        setLoading(false);
         return;
       }
 
@@ -106,7 +105,20 @@ export default function CategoryPage() {
 
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8 lg:py-12">
         {loading ? (
-          <div className="text-gray-900 text-center py-12">Loading products...</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-white rounded-md sm:rounded-lg lg:rounded-xl border border-gray-200 max-w-[180px] sm:max-w-[200px] lg:max-w-[220px] mx-auto">
+                  <div className="aspect-square bg-gray-200"></div>
+                  <div className="p-1.5 sm:p-2 lg:p-2.5">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <>
             <div className="mb-6 sm:mb-8">

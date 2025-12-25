@@ -35,9 +35,9 @@ interface Product {
 }
 
 export default function BundleManagement() {
+  const [loading, setLoading] = useState(true);
   const [bundles, setBundles] = useState<BundleWithOffers[]>([]);
   const [availableOffers, setAvailableOffers] = useState<(ProductOffer & { product_name: string })[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingBundle, setEditingBundle] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -54,6 +54,7 @@ export default function BundleManagement() {
   }, []);
 
   const fetchBundles = async () => {
+    setLoading(true);
     try {
       const { data: bundlesData, error: bundlesError } = await supabase
         .from('bundles')
@@ -272,7 +273,7 @@ export default function BundleManagement() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading bundles...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

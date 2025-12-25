@@ -17,9 +17,9 @@ interface ProductOffer {
 }
 
 export default function ProductOfferManagement() {
+  const [loading, setLoading] = useState(true);
   const [offers, setOffers] = useState<ProductOffer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingOffer, setEditingOffer] = useState<ProductOffer | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -42,6 +42,7 @@ export default function ProductOfferManagement() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [offersResult, productsResult] = await Promise.all([
         supabase.from('product_offers').select('*').order('created_at', { ascending: false }),
@@ -156,7 +157,7 @@ export default function ProductOfferManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900 text-center py-8">Loading offers...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

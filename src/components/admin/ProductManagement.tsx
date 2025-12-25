@@ -11,9 +11,9 @@ interface Category {
 }
 
 export default function ProductManagement() {
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -33,6 +33,7 @@ export default function ProductManagement() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [productsResult, categoriesResult] = await Promise.all([
         supabase
@@ -157,7 +158,7 @@ export default function ProductManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900 text-center py-8">Loading products...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

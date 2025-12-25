@@ -14,6 +14,7 @@ export default function BannerManagement() {
   }, []);
 
   const fetchSettings = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('homepage_settings')
@@ -81,7 +82,7 @@ export default function BannerManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900">Loading banner settings...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (

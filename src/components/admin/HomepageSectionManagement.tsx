@@ -22,9 +22,9 @@ interface HomepageSection {
 }
 
 export default function HomepageSectionManagement() {
+  const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -42,6 +42,7 @@ export default function HomepageSectionManagement() {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [sectionsResult, categoriesResult] = await Promise.all([
         supabase
@@ -222,7 +223,7 @@ export default function HomepageSectionManagement() {
   };
 
   if (loading) {
-    return <div className="text-gray-900">Loading sections...</div>;
+    return <div className="text-gray-900">Loading...</div>;
   }
 
   return (
